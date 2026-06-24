@@ -1,0 +1,11 @@
+
+> white-fox@1.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 690 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+10:15:49 AM [vite] hmr update /src/pages/Login.tsx, /src/index.css
+10:16:56 AM [vite] hmr update /src/pages/Login.tsx, /src/index.css
