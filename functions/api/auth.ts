@@ -2,21 +2,11 @@ export const onRequestPost: PagesFunction<{ PASSWORD?: string }> = async (contex
   try {
     const { password } = await context.request.json() as { password?: string };
     const correctPassword = context.env.PASSWORD || "whitefox";
-
     if (password === correctPassword) {
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } else {
-      return new Response(JSON.stringify({ success: false, message: '密码错误' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
     }
+    return new Response(JSON.stringify({ success: false, message: '密码错误' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
   } catch (error) {
-    return new Response(JSON.stringify({ success: false, message: '请求格式错误' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ success: false }), { status: 400 });
   }
 };
