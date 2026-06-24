@@ -17,8 +17,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // In local development, the Pages Function is not available unless using wrangler pages dev.
-    // For local dev, we'll allow a default password "whitefox".
     if (true && password === 'whitefox') {
       onLogin(password);
       return;

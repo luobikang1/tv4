@@ -1,0 +1,56 @@
+
+> white-fox@1.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 690 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+10:15:49 AM [vite] hmr update /src/pages/Login.tsx, /src/index.css
+10:16:56 AM [vite] hmr update /src/pages/Login.tsx, /src/index.css
+11:09:08 AM [vite] changed tsconfig file detected: /app/white-fox/tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+11:09:08 AM [vite] page reload index.html
+11:09:08 AM [vite] hmr update /src/App.tsx, /src/index.css
+11:09:08 AM [vite] hmr update /src/index.css, /src/pages/Home.tsx, /src/pages/Settings.tsx
+11:09:08 AM [vite] hmr update /src/index.css
+11:09:08 AM [vite] page reload src/main.tsx
+11:09:08 AM [vite] page reload src/api/sync.ts
+11:09:08 AM [vite] hmr update /src/pages/Home.tsx
+11:09:08 AM [vite] hmr update /src/components/layout/Layout.tsx
+11:09:08 AM [vite] hmr update /src/components/layout/Navbar.tsx
+11:09:08 AM [vite] hmr update /src/components/video/CategoryFilter.tsx
+11:09:08 AM [vite] hmr update /src/components/video/Player.tsx
+11:09:08 AM [vite] hmr update /src/components/video/SearchBar.tsx
+11:09:08 AM [vite] hmr update /src/components/video/VideoCard.tsx
+11:09:08 AM [vite] hmr update /src/components/video/VideoList.tsx
+11:09:08 AM [vite] hmr update /src/pages/Home.tsx
+11:09:08 AM [vite] hmr update /src/pages/Login.tsx
+11:09:08 AM [vite] hmr update /src/pages/Settings.tsx
+11:09:08 AM [vite] page reload src/tests/db-check.ts
+11:09:08 AM [vite] page reload tailwind.config.js
+11:09:08 AM [vite] vite.config.ts changed, restarting server...
+11:09:09 AM [vite] server restarted.
+(!) Could not auto-determine entry point from rollupOptions or html files and there are no explicit optimizeDeps.include patterns. Skipping dependency pre-bundling.
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+[Failed to load PostCSS config: Failed to load PostCSS config (searchPath: /app/white-fox): [Error] Loading PostCSS Plugin failed: Cannot find module 'tailwindcss'
+Require stack:
+- /app/postcss.config.js
+
+(@/app/postcss.config.js)
+Error: Loading PostCSS Plugin failed: Cannot find module 'tailwindcss'
+Require stack:
+- /app/postcss.config.js
+
+(@/app/postcss.config.js)
+    at load (file:///app/white-fox/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33632:11)
+    at file:///app/white-fox/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33657:16
+    at Array.map (<anonymous>)
+    at plugins (file:///app/white-fox/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33656:8)
+    at processResult (file:///app/white-fox/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33726:14)
+    at file:///app/white-fox/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33856:14]
+
+Node.js v22.22.1

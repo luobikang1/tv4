@@ -42,10 +42,10 @@ const Home: React.FC = () => {
   return (
     <div>
       <SearchBar onSearch={(kw) => loadVideos(kw)} />
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex items-center gap-4 mb-4 text-white">
         <span className="text-sm text-gray-400">数据源:</span>
         <select
-          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm"
+          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white"
           value={currentSourceIndex}
           onChange={(e) => setCurrentSourceIndex(Number(e.target.value))}
         >
