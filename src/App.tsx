@@ -28,16 +28,26 @@ const App: React.FC = () => {
     setIsAuthenticated(true);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('white_fox_password');
+    setIsAuthenticated(false);
+  };
+
   if (!isAuthenticated) return <Login onLogin={handleLogin} />;
 
   return (
-    <div className={theme}>
-      <Layout activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme}>
-        {activeTab === 'home' && <Home />}
-        {activeTab === 'settings' && <Settings />}
-        {activeTab === 'search' && <Home />}
-      </Layout>
-    </div>
+    <Layout
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      theme={theme}
+      toggleTheme={toggleTheme}
+      onLogout={handleLogout}
+    >
+      {activeTab === 'home' && <Home />}
+      {activeTab === 'favorites' && <Home forceFavorites={true} />}
+      {activeTab === 'settings' && <Settings />}
+      {activeTab === 'search' && <Home forceSearch={true} />}
+    </Layout>
   );
 };
 
