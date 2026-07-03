@@ -58,6 +58,8 @@ docker run -d -p 3000:3000 -e PASSWORD=your_pass white-fox
 
 ## ❓ 常见问题排查 (部署必看)
 
+> **部署失败提醒**：若出现 `npm ci` 错误，说明 `package.json` 与 `package-lock.json` 不同步。请在本地运行 `npm install` 并提交生成的 lock 文件。
+
 | 现象 | 原因 | 解决 |
 | :--- | :--- | :--- |
 | **视频播放失败** | 跨域(CORS)限制 | 必须部署在 CF/Vercel 或 Docker 以使用内置代理。 |
