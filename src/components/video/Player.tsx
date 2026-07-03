@@ -8,7 +8,7 @@ interface PlayerProps {
   title: string;
   onBack: () => void;
   playlist?: string;
-  onOpenDownload?: () => void;
+  onOpenDownload?: (currentPlayingUrl: string) => void;
 }
 
 const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlist, onOpenDownload }) => {
@@ -77,12 +77,8 @@ const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlis
     });
 
     art.on('ready', () => {
-      if (savedTime > 0) {
-        art.currentTime = savedTime;
-        art.notice.show = `已为您恢复上次播放进度`;
-      } else if (skipIntro > 0) {
-        art.currentTime = skipIntro;
-      }
+      if (savedTime > 0) art.currentTime = savedTime;
+      else if (skipIntro > 0) art.currentTime = skipIntro;
     });
 
     art.on('video:timeupdate', () => {
@@ -93,37 +89,47 @@ const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlis
       localStorage.setItem('white_fox_volume', art.volume.toString());
     });
 
-    art.on('video:ended', () => {
-      // Auto-next logic
-      const currentIndex = episodes.findIndex(e => e.url === currentUrl);
-      if (currentIndex !== -1 && currentIndex < episodes.length - 1) {
-        art.notice.show = '即将播放下一集...';
-        setTimeout(() => setCurrentUrl(episodes[currentIndex + 1].url), 2000);
-      }
-    });
-
     artInstance.current = art;
     return () => { if (art && art.destroy) art.destroy(); };
-  }, [currentUrl, episodes]);
+  }, [currentUrl, title]);
+
+  const handleDownloadClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Download button clicked in Player');
+    if (onOpenDownload) {
+      onOpenDownload(currentUrl);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col md:flex-row transition-all overflow-hidden animate-in fade-in duration-300">
+    <div className="fixed inset-0 bg-black z-[100] flex flex-col md:flex-row animate-in fade-in duration-300">
       <div className="flex-1 flex flex-col relative h-[60vh] md:h-full">
         <div className="p-4 flex items-center justify-between bg-gradient-to-b from-black/90 to-transparent absolute top-0 left-0 right-0 z-10">
           <div className="flex items-center gap-3 truncate">
-            <button onClick={onBack} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition text-white active:scale-95"><ChevronLeft size={24} /></button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onBack(); }}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition text-white active:scale-95"
+            >
+              <ChevronLeft size={24} />
+            </button>
             <h2 className="font-bold text-lg text-white drop-shadow-md truncate">{title}</h2>
           </div>
-          <button onClick={onOpenDownload} className="p-2.5 bg-orange-500 hover:bg-orange-600 rounded-full text-white shadow-lg active:scale-90 transition-all"><Download size={20} /></button>
+          <button
+            onClick={handleDownloadClick}
+            className="p-2.5 bg-orange-500 hover:bg-orange-600 rounded-full text-white shadow-lg active:scale-90 transition-all z-20"
+          >
+            <Download size={20} />
+          </button>
         </div>
         <div ref={artRef} className="flex-1 w-full h-full bg-black"></div>
       </div>
       {episodes.length > 1 && (
         <div className="w-full md:w-80 bg-gray-900 border-t md:border-t-0 md:border-l border-white/5 p-6 overflow-y-auto max-h-[40vh] md:max-h-full no-scrollbar">
-          <div className="flex items-center gap-2 mb-6 text-gray-400 font-black text-xs uppercase tracking-widest"><LayoutList size={14}/> Episode Selection</div>
+          <div className="flex items-center gap-2 mb-6 text-gray-400 font-black text-xs uppercase tracking-widest"><LayoutList size={14}/> 选集播放</div>
           <div className="grid grid-cols-4 md:grid-cols-2 gap-3">
             {episodes.map((ep, i) => (
-              <button key={i} onClick={() => setCurrentUrl(ep.url)} className={`px-3 py-3 rounded-xl text-xs font-bold transition-all ${currentUrl === ep.url ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white'}`}>{ep.name}</button>
+              <button key={i} onClick={() => setCurrentUrl(ep.url)} className={`px-3 py-3 rounded-xl text-xs font-bold transition-all ${currentUrl === ep.url ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}>{ep.name}</button>
             ))}
           </div>
         </div>
