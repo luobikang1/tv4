@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { X, Download, ExternalLink } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { X, Download, ExternalLink, PlayCircle } from 'lucide-react';
+import Artplayer from 'artplayer';
+import Hls from 'hls.js';
 
 interface DownloadModalProps {
   title: string;
@@ -8,70 +10,74 @@ interface DownloadModalProps {
 }
 
 const DownloadModal: React.FC<DownloadModalProps> = ({ title, url, onClose }) => {
-  const resolutions = ['1080P', '720P', '480P', '360P', '240P'];
+  const artRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = () => {
-    // Attempt multiple ways to trigger download
-    try {
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${title}.m3u8`;
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch (e) {
-      window.open(url, '_blank');
-    }
-  };
+  useEffect(() => {
+    if (!artRef.current) return;
+    const proxiedUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+    const art = new Artplayer({
+      container: artRef.current,
+      url: proxiedUrl,
+      autoplay: true,
+      autoSize: true,
+      setting: true,
+      moreVideoAttr: { crossOrigin: 'anonymous' },
+      customType: {
+        m3u8: (video: HTMLVideoElement, url: string) => {
+          if (Hls.isSupported()) {
+            const hls = new Hls({ xhrSetup: (xhr, sUrl) => {
+               if (sUrl.startsWith('http') && !sUrl.includes('/api/proxy')) {
+                 xhr.open('GET', `/api/proxy?url=${encodeURIComponent(sUrl)}`, true);
+               }
+            }});
+            hls.loadSource(url);
+            hls.attachMedia(video);
+          } else if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = url; }
+        },
+      },
+    });
+    return () => { if (art && art.destroy) art.destroy(); };
+  }, [url]);
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl transition-colors">
-        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-          <h3 className="font-bold truncate pr-4 text-gray-800 dark:text-white">{title} - 下载/外部播放</h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition text-gray-500">
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[210] flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh]">
+        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50">
+          <div className="flex items-center gap-3">
+             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-xl"><PlayCircle size={24}/></div>
+             <h3 className="font-black text-lg truncate dark:text-white">{title}</h3>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition text-gray-500"><X size={24} /></button>
         </div>
-        <div className="p-6 space-y-6">
-          <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-100 dark:border-orange-800">
-            <p className="text-xs text-orange-600 dark:text-orange-400 leading-relaxed font-medium">
-              温馨提示：.m3u8 链接建议使用手机端<b>夸克浏览器</b>或电脑端<b>IDM</b>下载。点击下方按钮将直接尝试打开/保存。
-            </p>
+
+        <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 no-scrollbar">
+          <div className="aspect-video bg-black rounded-[2rem] overflow-hidden shadow-2xl border-4 border-gray-100 dark:border-gray-700">
+            <div ref={artRef} className="w-full h-full"></div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">分辩率选择 (模拟)</label>
-            <div className="flex flex-wrap gap-2">
-              {resolutions.map(res => (
-                <button key={res} className="px-3 py-1.5 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-blue-600 hover:text-white rounded-lg transition-all font-bold">
-                  {res}
-                </button>
-              ))}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">下载与外放</h4>
+              <div className="flex gap-3">
+                <a href={url} target="_blank" rel="noreferrer" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl flex items-center justify-center gap-2 font-black transition shadow-xl shadow-blue-600/20 active:scale-95"><Download size={20}/> 立即下载</a>
+                <a href={`vlc://${url}`} className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl flex items-center justify-center transition shadow-xl shadow-orange-500/20 active:scale-95"><ExternalLink size={24}/></a>
+              </div>
+              <p className="text-[10px] text-gray-400 font-medium leading-relaxed bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                温馨提示：若内置播放器无法播放，请复制直链使用<b>夸克浏览器</b>或<b>迅雷</b>下载观看。
+              </p>
             </div>
-          </div>
 
-          <div className="pt-2">
-            <button
-              onClick={handleDownload}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl flex items-center justify-center gap-3 font-bold transition shadow-lg shadow-blue-500/30 active:scale-95"
-            >
-              <Download size={22} /> 立即下载视频
-            </button>
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <a
-                href={`vlc://${url}`}
-                className="bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold transition shadow-lg shadow-orange-500/20 active:scale-95"
-              >
-                <ExternalLink size={18} /> VLC播放
-              </a>
-              <button
-                onClick={() => { navigator.clipboard.writeText(url); alert('链接已复制，请粘贴到浏览器或下载器'); }}
-                className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold transition active:scale-95"
-              >
-                复制直链
-              </button>
+            <div className="space-y-4">
+              <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">视频直链地址</h4>
+              <div className="relative group">
+                <input readOnly value={url} className="w-full text-[10px] p-4 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl outline-none font-mono pr-20" />
+                <button onClick={() => { navigator.clipboard.writeText(url); alert('复制成功'); }} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 px-4 py-2 rounded-xl text-[10px] font-black shadow-sm border border-gray-100 dark:border-gray-700 active:scale-95 transition">复制</button>
+              </div>
+              <div className="flex gap-2">
+                 {['1080P', '720P', '480P', '360P'].map(r => (
+                   <div key={r} className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-[10px] font-black text-gray-500 rounded-lg">{r}</div>
+                 ))}
+              </div>
             </div>
           </div>
         </div>

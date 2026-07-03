@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
-import { Download } from 'lucide-react';
+import { Download, ChevronLeft, LayoutList } from 'lucide-react';
 
 interface PlayerProps {
   url: string;
@@ -33,8 +33,10 @@ const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlis
   useEffect(() => {
     if (!artRef.current) return;
     const skipIntro = Number(localStorage.getItem('white_fox_skip_intro') || 0);
+    const savedVolume = Number(localStorage.getItem('white_fox_volume') || 0.7);
+    const progressKey = `white_fox_progress_${title}`;
+    const savedTime = Number(localStorage.getItem(progressKey) || 0);
 
-    // Use proxy for the main manifest to bypass CORS
     const proxiedUrl = `/api/proxy?url=${encodeURIComponent(currentUrl)}`;
 
     const art = new Artplayer({
@@ -48,6 +50,7 @@ const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlis
       pip: true,
       playbackRate: true,
       aspectRatio: true,
+      volume: savedVolume,
       moreVideoAttr: { crossOrigin: 'anonymous' },
       quality: [
         { html: '1080P', url: proxiedUrl },
@@ -58,20 +61,14 @@ const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlis
       customType: {
         m3u8: (video: HTMLVideoElement, url: string, art: Artplayer) => {
           if (Hls.isSupported()) {
-            const hls = new Hls({
-              enableWorker: true,
-              xhrSetup: (xhr, segmentUrl) => {
-                // If it's a segment request and not already proxied, route through proxy
-                if (segmentUrl.startsWith('http') && !segmentUrl.includes('/api/proxy')) {
-                   const newUrl = `/api/proxy?url=${encodeURIComponent(segmentUrl)}`;
-                   xhr.open('GET', newUrl, true);
-                }
+            const hls = new Hls({ enableWorker: true, xhrSetup: (xhr, sUrl) => {
+              if (sUrl.startsWith('http') && !sUrl.includes('/api/proxy')) {
+                xhr.open('GET', `/api/proxy?url=${encodeURIComponent(sUrl)}`, true);
               }
-            });
+            }});
             hls.loadSource(url);
             hls.attachMedia(video);
             art.on('destroy', () => hls.destroy());
-            hls.on(Hls.Events.MANIFEST_PARSED, () => { if (skipIntro > 0) video.currentTime = skipIntro; });
           } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
           }
@@ -79,36 +76,54 @@ const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlis
       },
     });
 
+    art.on('ready', () => {
+      if (savedTime > 0) {
+        art.currentTime = savedTime;
+        art.notice.show = `已为您恢复上次播放进度`;
+      } else if (skipIntro > 0) {
+        art.currentTime = skipIntro;
+      }
+    });
+
+    art.on('video:timeupdate', () => {
+      localStorage.setItem(progressKey, art.currentTime.toString());
+    });
+
+    art.on('video:volumechange', () => {
+      localStorage.setItem('white_fox_volume', art.volume.toString());
+    });
+
+    art.on('video:ended', () => {
+      // Auto-next logic
+      const currentIndex = episodes.findIndex(e => e.url === currentUrl);
+      if (currentIndex !== -1 && currentIndex < episodes.length - 1) {
+        art.notice.show = '即将播放下一集...';
+        setTimeout(() => setCurrentUrl(episodes[currentIndex + 1].url), 2000);
+      }
+    });
+
     artInstance.current = art;
     return () => { if (art && art.destroy) art.destroy(); };
-  }, [currentUrl]);
+  }, [currentUrl, episodes]);
 
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col md:flex-row">
+    <div className="fixed inset-0 bg-black z-[100] flex flex-col md:flex-row transition-all overflow-hidden animate-in fade-in duration-300">
       <div className="flex-1 flex flex-col relative h-[60vh] md:h-full">
         <div className="p-4 flex items-center justify-between bg-gradient-to-b from-black/90 to-transparent absolute top-0 left-0 right-0 z-10">
-          <div className="flex items-center gap-4 flex-1 truncate">
-            <button onClick={onBack} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition text-white">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <h2 className="font-bold text-lg truncate text-white">{title}</h2>
+          <div className="flex items-center gap-3 truncate">
+            <button onClick={onBack} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition text-white active:scale-95"><ChevronLeft size={24} /></button>
+            <h2 className="font-bold text-lg text-white drop-shadow-md truncate">{title}</h2>
           </div>
-          {onOpenDownload && (
-            <button onClick={onOpenDownload} className="p-2.5 bg-orange-500 hover:bg-orange-600 rounded-full text-white shadow-lg transition-all">
-              <Download size={20} />
-            </button>
-          )}
+          <button onClick={onOpenDownload} className="p-2.5 bg-orange-500 hover:bg-orange-600 rounded-full text-white shadow-lg active:scale-90 transition-all"><Download size={20} /></button>
         </div>
         <div ref={artRef} className="flex-1 w-full h-full bg-black"></div>
       </div>
       {episodes.length > 1 && (
-        <div className="w-full md:w-80 bg-gray-900 border-t md:border-t-0 md:border-l border-gray-800 p-5 overflow-y-auto max-h-[40vh] md:max-h-full">
-          <h3 className="text-gray-500 text-xs font-bold mb-4 uppercase tracking-widest">剧集列表</h3>
-          <div className="grid grid-cols-4 md:grid-cols-2 gap-2">
+        <div className="w-full md:w-80 bg-gray-900 border-t md:border-t-0 md:border-l border-white/5 p-6 overflow-y-auto max-h-[40vh] md:max-h-full no-scrollbar">
+          <div className="flex items-center gap-2 mb-6 text-gray-400 font-black text-xs uppercase tracking-widest"><LayoutList size={14}/> Episode Selection</div>
+          <div className="grid grid-cols-4 md:grid-cols-2 gap-3">
             {episodes.map((ep, i) => (
-              <button key={i} onClick={() => setCurrentUrl(ep.url)} className={`px-2 py-3 rounded-lg text-xs truncate transition ${currentUrl === ep.url ? 'bg-blue-600 text-white font-bold' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
-                {ep.name}
-              </button>
+              <button key={i} onClick={() => setCurrentUrl(ep.url)} className={`px-3 py-3 rounded-xl text-xs font-bold transition-all ${currentUrl === ep.url ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white'}`}>{ep.name}</button>
             ))}
           </div>
         </div>
