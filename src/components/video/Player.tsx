@@ -40,10 +40,10 @@ const Player: React.FC<PlayerProps> = ({ url, title, onBack }) => {
         { html: '1080P', url: url },
         { html: '720P', url: url },
         { html: '540P', url: url },
-        { html: '480P', url: url },
+        { default: true, html: '480P', url: url },
         { html: '360P', url: url },
         { html: '240P', url: url },
-        { default: true, html: '自动', url: url },
+        { html: '自动', url: url },
       ],
       controls: [
         {
