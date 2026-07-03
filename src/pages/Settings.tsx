@@ -1,29 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Save, RotateCcw, Clock } from 'lucide-react';
 import { DEFAULT_SOURCES } from '../constants';
 
-interface Source {
-  name: string;
-  url: string;
-}
+interface Source { name: string; url: string; }
 
 const Settings: React.FC = () => {
   const [sources, setSources] = useState<Source[]>([]);
   const [newSourceName, setNewSourceName] = useState('');
   const [newSourceUrl, setNewSourceUrl] = useState('');
+  const [skipIntro, setSkipIntro] = useState<number>(() => {
+    return Number(localStorage.getItem('white_fox_skip_intro') || 0);
+  });
 
   useEffect(() => {
     const savedSources = localStorage.getItem('white_fox_sources');
-    if (savedSources) {
-      setSources(JSON.parse(savedSources));
-    } else {
-      setSources(DEFAULT_SOURCES);
-    }
+    if (savedSources) { setSources(JSON.parse(savedSources)); } else { setSources(DEFAULT_SOURCES); }
   }, []);
 
   const saveSources = (updatedSources: Source[]) => {
     setSources(updatedSources);
     localStorage.setItem('white_fox_sources', JSON.stringify(updatedSources));
+  };
+
+  const handleSkipIntroChange = (val: number) => {
+    setSkipIntro(val);
+    localStorage.setItem('white_fox_skip_intro', val.toString());
   };
 
   const addSource = () => {
@@ -49,23 +50,36 @@ const Settings: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto text-gray-900 dark:text-white">
       <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 mb-8 transition-colors">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Clock size={20} /> 播放设定</h2>
+        <div className="flex items-center gap-4">
+          <label className="text-sm text-gray-600 dark:text-gray-400">自动跳过片头 (秒):</label>
+          <input
+            type="number"
+            value={skipIntro}
+            onChange={(e) => handleSkipIntroChange(Number(e.target.value))}
+            className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded p-1 w-20 text-center"
+          />
+        </div>
+      </div>
+
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 mb-8 transition-colors">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <Plus size={20} /> 添加资源接口
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <input
             type="text"
-            placeholder="接口名称 (如: 卧龙资源)"
+            placeholder="接口名称"
             value={newSourceName}
             onChange={(e) => setNewSourceName(e.target.value)}
-            className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:border-blue-500 transition-colors"
+            className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:border-blue-500"
           />
           <input
             type="text"
-            placeholder="API URL (JSON格式)"
+            placeholder="API URL"
             value={newSourceUrl}
             onChange={(e) => setNewSourceUrl(e.target.value)}
-            className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:border-blue-500 transition-colors"
+            className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:border-blue-500"
           />
         </div>
         <button
@@ -88,17 +102,12 @@ const Settings: React.FC = () => {
         </div>
         <div className="space-y-3">
           {sources.map((source, index) => (
-            <div key={index} className="flex items-center justify-between bg-white dark:bg-gray-700 p-3 rounded shadow-sm transition-colors">
+            <div key={index} className="flex items-center justify-between bg-white dark:bg-gray-700 p-3 rounded shadow-sm">
               <div className="overflow-hidden">
                 <p className="font-medium">{source.name}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{source.url}</p>
               </div>
-              <button
-                onClick={() => deleteSource(index)}
-                className="text-gray-400 hover:text-red-500 transition-colors p-2"
-              >
-                <Trash2 size={18} />
-              </button>
+              <button onClick={() => deleteSource(index)} className="text-gray-400 hover:text-red-500 transition-colors p-2"><Trash2 size={18} /></button>
             </div>
           ))}
         </div>

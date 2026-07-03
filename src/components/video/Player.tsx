@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
-import { Download } from 'lucide-react';
 
 interface PlayerProps {
   url: string;
@@ -15,10 +14,13 @@ const Player: React.FC<PlayerProps> = ({ url, title, onBack }) => {
   useEffect(() => {
     if (!artRef.current) return;
 
+    const skipIntro = Number(localStorage.getItem('white_fox_skip_intro') || 0);
+
     const art = new Artplayer({
       container: artRef.current,
       url: url,
       autoplay: true,
+      autoSize: true,
       fullscreen: true,
       fullscreenWeb: true,
       setting: true,
@@ -35,11 +37,13 @@ const Player: React.FC<PlayerProps> = ({ url, title, onBack }) => {
         crossOrigin: 'anonymous',
       },
       quality: [
-        { default: true, html: '自动', url: url },
         { html: '1080P', url: url },
         { html: '720P', url: url },
+        { html: '540P', url: url },
         { html: '480P', url: url },
         { html: '360P', url: url },
+        { html: '240P', url: url },
+        { default: true, html: '自动', url: url },
       ],
       controls: [
         {
@@ -47,23 +51,34 @@ const Player: React.FC<PlayerProps> = ({ url, title, onBack }) => {
           html: '<i class="art-icon art-icon-download"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></i>',
           tooltip: '下载视频',
           click: function () {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = title || 'video';
-            a.target = '_blank';
-            a.click();
+            window.open(url, '_blank');
           },
         },
       ],
       customType: {
         m3u8: function (video: HTMLVideoElement, url: string, art: Artplayer) {
           if (Hls.isSupported()) {
-            const hls = new Hls();
+            const hls = new Hls({
+              enableWorker: true,
+              lowLatencyMode: true,
+            });
             hls.loadSource(url);
             hls.attachMedia(video);
             art.on('destroy', () => hls.destroy());
+
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              if (skipIntro > 0) {
+                art.notice.show = `已自动跳过片头 ${skipIntro} 秒`;
+                video.currentTime = skipIntro;
+              }
+            });
           } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
+            video.addEventListener('loadedmetadata', () => {
+              if (skipIntro > 0) {
+                video.currentTime = skipIntro;
+              }
+            });
           }
         },
       },
