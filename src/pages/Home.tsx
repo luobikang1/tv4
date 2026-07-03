@@ -55,13 +55,6 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean }> = ({ f
 
   useEffect(() => { if (!showHistory && !forceFavorites) loadVideos(); }, [activeCategory, currentSourceIndex, showHistory, isGlobalSearch, forceFavorites, loadVideos]);
 
-  const handleSelectVideo = (video: VodInfo) => {
-    setSelectedVideo(video);
-    const updated = [video, ...viewHistory.filter(v => v.id !== video.id)].slice(0, 50);
-    setViewHistory(updated);
-    localStorage.setItem('white_fox_history', JSON.stringify(updated));
-  };
-
   const currentList = forceFavorites ? favorites : (showHistory ? viewHistory : videos);
 
   return (
@@ -87,35 +80,19 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean }> = ({ f
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4"><div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500/20 border-t-blue-500"></div><p className="text-xs text-gray-400 font-black tracking-widest uppercase">Fetching Content</p></div>
       ) : (
-        <VideoList
-          videos={currentList}
-          onSelect={handleSelectVideo}
-          onDownloadSelect={(v) => setDownloadVideo(v)}
-          favorites={favorites}
-          onToggleFavorite={(e, v) => {
-            e.stopPropagation();
-            const isFav = favorites.some(f => f.id === v.id);
-            const updated = isFav ? favorites.filter(f => f.id !== v.id) : [v, ...favorites];
-            setFavorites(updated);
-            localStorage.setItem('white_fox_favorites', JSON.stringify(updated));
-          }}
-        />
+        <VideoList videos={currentList} onSelect={(v) => setSelectedVideo(v)} onDownloadSelect={(v) => setDownloadVideo(v)} favorites={favorites} onToggleFavorite={(e, v) => {
+          e.stopPropagation();
+          const isFav = favorites.some(f => f.id === v.id);
+          const updated = isFav ? favorites.filter(f => f.id !== v.id) : [v, ...favorites];
+          setFavorites(updated);
+          localStorage.setItem('white_fox_favorites', JSON.stringify(updated));
+        }}/>
       )}
       {selectedVideo && (
-        <Player
-          url={selectedVideo.playUrl.split('$')[1] || selectedVideo.playUrl}
-          title={selectedVideo.name}
-          playlist={selectedVideo.playUrl}
-          onBack={() => setSelectedVideo(null)}
-          onOpenDownload={() => setDownloadVideo(selectedVideo)}
-        />
+        <Player url={selectedVideo.playUrl.split('$')[1] || selectedVideo.playUrl} title={selectedVideo.name} playlist={selectedVideo.playUrl} onBack={() => setSelectedVideo(null)} onOpenDownload={() => setDownloadVideo(selectedVideo)} />
       )}
       {downloadVideo && (
-        <DownloadModal
-          title={downloadVideo.name}
-          url={downloadVideo.playUrl.split('$')[1] || downloadVideo.playUrl}
-          onClose={() => setDownloadVideo(null)}
-        />
+        <DownloadModal title={downloadVideo.name} url={downloadVideo.playUrl.split('$')[1] || downloadVideo.playUrl} playlist={downloadVideo.playUrl} onClose={() => setDownloadVideo(null)} />
       )}
     </div>
   );
