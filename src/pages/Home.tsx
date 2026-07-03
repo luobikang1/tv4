@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import VideoList from '../components/video/VideoList';
 import Player from '../components/video/Player';
 import SearchBar from '../components/video/SearchBar';
@@ -19,12 +19,9 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean }> = ({ f
   const [currentSourceIndex, setCurrentSourceIndex] = useState(0);
   const [isGlobalSearch, setIsGlobalSearch] = useState(forceSearch || false);
   const [searchKeyword, setSearchKeyword] = useState('');
-
   const [favorites, setFavorites] = useState<VodInfo[]>(() => JSON.parse(localStorage.getItem('white_fox_favorites') || '[]'));
   const [viewHistory, setViewHistory] = useState<VodInfo[]>(() => JSON.parse(localStorage.getItem('white_fox_history') || '[]'));
   const [showHistory, setShowHistory] = useState(false);
-
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('white_fox_sources');
@@ -32,60 +29,38 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean }> = ({ f
   }, []);
 
   const loadVideos = useCallback(async (keyword?: string) => {
-    // Immediate state reset to avoid "display and search mismatch"
     setLoading(true);
     setVideos([]);
     const query = keyword !== undefined ? keyword : searchKeyword;
     setSearchKeyword(query);
-
     try {
       if (query || isGlobalSearch) {
         const targetSources = isGlobalSearch ? sources.slice(0, 15) : [sources[currentSourceIndex]];
-        const results = await Promise.allSettled(
-          targetSources.map(source => fetchVodList(source.url, 1, undefined, query))
-        );
-
-        let merged = results
-          .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
-          .flatMap(r => r.value.list);
-
-        // Intelligent Sorting: Exact match first, then partial match
+        const results = await Promise.allSettled(targetSources.map(s => fetchVodList(s.url, 1, undefined, query)));
+        let merged = results.filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled').flatMap(r => r.value.list);
         if (query) {
-           const lowerQuery = query.toLowerCase();
-           merged.sort((a, b) => {
-             const aMatch = a.name.toLowerCase() === lowerQuery;
-             const bMatch = b.name.toLowerCase() === lowerQuery;
-             if (aMatch && !bMatch) return -1;
-             if (!aMatch && bMatch) return 1;
-             return 0;
-           });
+           const lq = query.toLowerCase();
+           merged.sort((a, b) => (a.name.toLowerCase() === lq ? -1 : (b.name.toLowerCase() === lq ? 1 : 0)));
         }
-
-        // Deduplicate by name and ensure playUrl exists
-        const final = merged.filter((v, i, a) =>
-          v.playUrl && a.findIndex(t => t.name === v.name) === i
-        );
-
-        setVideos(final);
+        setVideos(merged.filter((v, i, a) => v.playUrl && a.findIndex(t => t.name === v.name) === i));
       } else {
-        const sourceUrl = sources[currentSourceIndex]?.url;
-        if (!sourceUrl) return;
-        const data = await fetchVodList(sourceUrl, 1, activeCategory || undefined);
+        const url = sources[currentSourceIndex]?.url;
+        if (!url) return;
+        const data = await fetchVodList(url, 1, activeCategory || undefined);
         setVideos(data.list);
-        if (data.class?.length > 0 && categories.length === 0) {
-          setCategories(data.class.map((c: any) => ({ id: c.type_id, name: c.type_name })));
-        }
+        if (data.class?.length > 0 && categories.length === 0) setCategories(data.class.map((c: any) => ({ id: c.type_id, name: c.type_name })));
       }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); } finally { setLoading(false); }
   }, [activeCategory, currentSourceIndex, isGlobalSearch, sources, searchKeyword, categories.length]);
 
-  useEffect(() => {
-    if (!showHistory && !forceFavorites) loadVideos();
-  }, [activeCategory, currentSourceIndex, showHistory, isGlobalSearch, forceFavorites, loadVideos]);
+  useEffect(() => { if (!showHistory && !forceFavorites) loadVideos(); }, [activeCategory, currentSourceIndex, showHistory, isGlobalSearch, forceFavorites, loadVideos]);
+
+  const handleSelectVideo = (video: VodInfo) => {
+    setSelectedVideo(video);
+    const updated = [video, ...viewHistory.filter(v => v.id !== video.id)].slice(0, 50);
+    setViewHistory(updated);
+    localStorage.setItem('white_fox_history', JSON.stringify(updated));
+  };
 
   const currentList = forceFavorites ? favorites : (showHistory ? viewHistory : videos);
 
@@ -96,58 +71,44 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean }> = ({ f
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 flex gap-2">
               <SearchBar onSearch={(kw) => { setActiveCategory(null); loadVideos(kw); }} />
-              <button
-                onClick={() => setIsGlobalSearch(!isGlobalSearch)}
-                className={`px-4 rounded-xl flex items-center gap-2 border transition ${isGlobalSearch ? 'bg-orange-500 text-white border-orange-400' : 'bg-white dark:bg-gray-800 text-gray-500 dark:border-gray-700'}`}
-              >
+              <button onClick={() => setIsGlobalSearch(!isGlobalSearch)} className={`px-4 rounded-xl flex items-center gap-2 border transition ${isGlobalSearch ? 'bg-orange-500 text-white border-orange-400 shadow-lg shadow-orange-500/20' : 'bg-white dark:bg-gray-800 text-gray-500 dark:border-gray-700'}`}>
                 <Globe size={18} /> <span className="hidden sm:inline font-bold text-sm">全站聚搜</span>
               </button>
             </div>
             <div className="flex items-center gap-2 justify-end">
-              <button onClick={() => setShowHistory(!showHistory)} className={`p-2.5 rounded-xl border transition ${showHistory ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-500 dark:border-gray-700'}`} title="历史"><History size={20} /></button>
+              <button onClick={() => setShowHistory(!showHistory)} className={`p-2.5 rounded-xl border transition ${showHistory ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white dark:bg-gray-800 text-gray-500 dark:border-gray-700'}`} title="历史"><History size={20} /></button>
               <button onClick={() => { setSearchKeyword(''); loadVideos(''); }} className="p-2.5 rounded-xl bg-white dark:bg-gray-800 text-gray-500 border dark:border-gray-700 hover:text-blue-500 transition-colors"><RefreshCw size={20} /></button>
             </div>
           </div>
-          {searchKeyword && (
-            <div className="flex items-center gap-2 text-xs text-orange-500 font-medium animate-in fade-in slide-in-from-top-1">
-              <AlertCircle size={14}/> 正在为您呈现关键词 “{searchKeyword}” 的最优搜索结果
-            </div>
-          )}
+          {searchKeyword && <div className="flex items-center gap-2 text-xs text-orange-500 font-bold"><AlertCircle size={14}/> 正在为您呈现关键词 “{searchKeyword}” 的最优资源</div>}
         </div>
       )}
-
-      {!showHistory && !isGlobalSearch && !forceFavorites && (
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
-           <CategoryFilter categories={categories} activeCategory={activeCategory} onSelect={setActiveCategory} />
-        </div>
-      )}
-
+      {!showHistory && !isGlobalSearch && !forceFavorites && <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar"><CategoryFilter categories={categories} activeCategory={activeCategory} onSelect={setActiveCategory} /></div>}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500/20 border-t-blue-500"></div>
-          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">精准寻影中</p>
-        </div>
+        <div className="flex flex-col items-center justify-center py-24 gap-4"><div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500/20 border-t-blue-500"></div><p className="text-xs text-gray-400 font-black tracking-widest uppercase">Fetching Content</p></div>
       ) : (
-        <VideoList
-          videos={currentList}
-          onSelect={(v) => setSelectedVideo(v)}
-          favorites={favorites}
-          onToggleFavorite={(e, v) => {
-            e.stopPropagation();
-            const isFav = favorites.some(f => f.id === v.id);
-            const updated = isFav ? favorites.filter(f => f.id !== v.id) : [v, ...favorites];
-            setFavorites(updated);
-            localStorage.setItem('white_fox_favorites', JSON.stringify(updated));
-          }}
-        />
+        <VideoList videos={currentList} onSelect={handleSelectVideo} favorites={favorites} onToggleFavorite={(e, v) => {
+          e.stopPropagation();
+          const isFav = favorites.some(f => f.id === v.id);
+          const updated = isFav ? favorites.filter(f => f.id !== v.id) : [v, ...favorites];
+          setFavorites(updated);
+          localStorage.setItem('white_fox_favorites', JSON.stringify(updated));
+        }}/>
       )}
-
       {selectedVideo && (
         <Player
           url={selectedVideo.playUrl.split('$')[1] || selectedVideo.playUrl}
           title={selectedVideo.name}
           playlist={selectedVideo.playUrl}
-          onBack={() => setSelectedVideo(null)}
+          onBack={() => { console.log('Back clicked'); setSelectedVideo(null); }}
+          onOpenDownload={() => setDownloadVideo(selectedVideo)}
+        />
+      )}
+      {downloadVideo && (
+        <DownloadModal
+          title={downloadVideo.name}
+          url={downloadVideo.playUrl.split('$')[1] || downloadVideo.playUrl}
+          onClose={() => setDownloadVideo(null)}
         />
       )}
     </div>
