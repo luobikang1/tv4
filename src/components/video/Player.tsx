@@ -24,7 +24,7 @@ const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlis
         const idx = p.indexOf('$');
         if (idx === -1) return { name: '播放', url: p };
         return { name: p.substring(0, idx), url: p.substring(idx + 1) };
-      }).filter(p => p.url && (p.url.includes('http') || p.url.includes('.m3u8')));
+      }).filter(p => p.url && p.url.startsWith('http'));
       if (parts.length === 0 && initialUrl) parts = [{ name: '正片', url: initialUrl }];
       setEpisodes(parts);
     }
@@ -34,9 +34,12 @@ const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlis
     if (!artRef.current) return;
     const skipIntro = Number(localStorage.getItem('white_fox_skip_intro') || 0);
 
+    // Use proxy for the main manifest to bypass CORS
+    const proxiedUrl = `/api/proxy?url=${encodeURIComponent(currentUrl)}`;
+
     const art = new Artplayer({
       container: artRef.current,
-      url: currentUrl,
+      url: proxiedUrl,
       autoplay: true,
       autoSize: true,
       fullscreen: true,
@@ -47,16 +50,24 @@ const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlis
       aspectRatio: true,
       moreVideoAttr: { crossOrigin: 'anonymous' },
       quality: [
-        { html: '1080P', url: currentUrl },
-        { html: '720P', url: currentUrl },
-        { default: true, html: '480P', url: currentUrl },
-        { html: '360P', url: currentUrl },
-        { html: '240P', url: currentUrl },
+        { html: '1080P', url: proxiedUrl },
+        { html: '720P', url: proxiedUrl },
+        { default: true, html: '480P', url: proxiedUrl },
+        { html: '360P', url: proxiedUrl },
       ],
       customType: {
         m3u8: (video: HTMLVideoElement, url: string, art: Artplayer) => {
           if (Hls.isSupported()) {
-            const hls = new Hls();
+            const hls = new Hls({
+              enableWorker: true,
+              xhrSetup: (xhr, segmentUrl) => {
+                // If it's a segment request and not already proxied, route through proxy
+                if (segmentUrl.startsWith('http') && !segmentUrl.includes('/api/proxy')) {
+                   const newUrl = `/api/proxy?url=${encodeURIComponent(segmentUrl)}`;
+                   xhr.open('GET', newUrl, true);
+                }
+              }
+            });
             hls.loadSource(url);
             hls.attachMedia(video);
             art.on('destroy', () => hls.destroy());
@@ -73,42 +84,29 @@ const Player: React.FC<PlayerProps> = ({ url: initialUrl, title, onBack, playlis
   }, [currentUrl]);
 
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 bg-black z-[100] flex flex-col md:flex-row">
       <div className="flex-1 flex flex-col relative h-[60vh] md:h-full">
-        <div className="p-4 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent absolute top-0 left-0 right-0 z-10">
+        <div className="p-4 flex items-center justify-between bg-gradient-to-b from-black/90 to-transparent absolute top-0 left-0 right-0 z-10">
           <div className="flex items-center gap-4 flex-1 truncate">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onBack();
-              }}
-              className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full transition-all text-white active:scale-90"
-              title="返回首页"
-            >
+            <button onClick={onBack} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition text-white">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <h2 className="font-bold text-lg truncate text-white drop-shadow-md">{title}</h2>
+            <h2 className="font-bold text-lg truncate text-white">{title}</h2>
           </div>
           {onOpenDownload && (
-            <button
-              onClick={onOpenDownload}
-              className="p-2.5 bg-orange-500 hover:bg-orange-600 rounded-full text-white shadow-lg transition-all active:scale-90 ml-2"
-              title="下载/外部播放"
-            >
+            <button onClick={onOpenDownload} className="p-2.5 bg-orange-500 hover:bg-orange-600 rounded-full text-white shadow-lg transition-all">
               <Download size={20} />
             </button>
           )}
         </div>
         <div ref={artRef} className="flex-1 w-full h-full bg-black"></div>
       </div>
-
       {episodes.length > 1 && (
-        <div className="w-full md:w-80 bg-gray-950 border-t md:border-t-0 md:border-l border-white/5 p-5 overflow-y-auto max-h-[40vh] md:max-h-full">
-          <h3 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Episodes • 选集列表</h3>
+        <div className="w-full md:w-80 bg-gray-900 border-t md:border-t-0 md:border-l border-gray-800 p-5 overflow-y-auto max-h-[40vh] md:max-h-full">
+          <h3 className="text-gray-500 text-xs font-bold mb-4 uppercase tracking-widest">剧集列表</h3>
           <div className="grid grid-cols-4 md:grid-cols-2 gap-2">
             {episodes.map((ep, i) => (
-              <button key={i} onClick={() => setCurrentUrl(ep.url)} className={`px-2 py-3 rounded-xl text-xs truncate transition-all duration-300 ${currentUrl === ep.url ? 'bg-blue-600 text-white font-bold ring-4 ring-blue-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+              <button key={i} onClick={() => setCurrentUrl(ep.url)} className={`px-2 py-3 rounded-lg text-xs truncate transition ${currentUrl === ep.url ? 'bg-blue-600 text-white font-bold' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
                 {ep.name}
               </button>
             ))}
