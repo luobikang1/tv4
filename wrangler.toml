@@ -2,10 +2,12 @@ name = "white-fox"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "dist"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "white-fox-db"
-database_id = "YOUR_DATABASE_ID"
+# [vars]
+# PASSWORD = "ADMIN_PASSWORD"
 
-[vars]
-PASSWORD = "ADMIN_PASSWORD"
+# To use D1, create a database in CF dashboard and bind it to "DB"
+# or uncomment below and fill in your database_id
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "white-fox-db"
+# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
