@@ -5,11 +5,12 @@ import { VodInfo } from '../../api/vod';
 interface VideoListProps {
   videos: VodInfo[];
   onSelect: (video: VodInfo) => void;
+  onDownloadSelect?: (video: VodInfo) => void;
   favorites?: VodInfo[];
   onToggleFavorite?: (e: React.MouseEvent, video: VodInfo) => void;
 }
 
-const VideoList: React.FC<VideoListProps> = ({ videos, onSelect, favorites = [], onToggleFavorite }) => {
+const VideoList: React.FC<VideoListProps> = ({ videos, onSelect, onDownloadSelect, favorites = [], onToggleFavorite }) => {
   if (videos.length === 0) return <div className="flex flex-col items-center justify-center py-20 text-gray-500 font-bold w-full"><p>暂无影片资源</p></div>;
 
   return (
@@ -22,12 +23,12 @@ const VideoList: React.FC<VideoListProps> = ({ videos, onSelect, favorites = [],
           type={video.type}
           remark={video.remarks}
           onClick={() => onSelect(video)}
-          isFavorite={favorites.some(v => v.id === video.id)}
+          onDownloadClick={onDownloadSelect ? (e) => { e.stopPropagation(); onDownloadSelect(video); } : undefined}
+          isFavorite={favorites.some(f => f.id === video.id)}
           onToggleFavorite={onToggleFavorite ? (e) => onToggleFavorite(e, video) : undefined}
         />
       ))}
     </div>
   );
 };
-
 export default VideoList;

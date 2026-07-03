@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Play } from 'lucide-react';
+import { Heart, Play, Download } from 'lucide-react';
 
 interface VideoCardProps {
   title: string;
@@ -7,29 +7,24 @@ interface VideoCardProps {
   type: string;
   remark: string;
   onClick: () => void;
+  onDownloadClick?: (e: React.MouseEvent) => void;
   isFavorite?: boolean;
   onToggleFavorite?: (e: React.MouseEvent) => void;
 }
 
-const VideoCard: React.FC<VideoCardProps> = ({ title, poster, type, remark, onClick, isFavorite, onToggleFavorite }) => {
+const VideoCard: React.FC<VideoCardProps> = ({ title, poster, type, remark, onClick, onDownloadClick, isFavorite, onToggleFavorite }) => {
   const [imgSrc, setImgSrc] = useState(poster);
   const proxyUrl = '/api/proxy?url=' + encodeURIComponent(poster);
 
   const handleImageError = () => {
-    if (imgSrc !== proxyUrl) {
-      setImgSrc(proxyUrl); // Try through proxy if direct load fails
-    } else {
-      setImgSrc('https://via.placeholder.com/300x400?text=No+Image');
-    }
+    if (imgSrc !== proxyUrl) setImgSrc(proxyUrl);
+    else setImgSrc('https://via.placeholder.com/300x400?text=No+Image');
   };
 
   return (
     <div
       className="group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all duration-300 shadow-sm hover:shadow-xl relative flex flex-col h-full"
-      onClick={(e) => {
-        e.preventDefault();
-        onClick();
-      }}
+      onClick={(e) => { e.preventDefault(); onClick(); }}
     >
       <div className="relative aspect-[3/4.2] overflow-hidden bg-gray-100 dark:bg-gray-700">
         <img
@@ -41,29 +36,36 @@ const VideoCard: React.FC<VideoCardProps> = ({ title, poster, type, remark, onCl
         />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-full z-10">{remark}</div>
 
-        {onToggleFavorite && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFavorite(e);
-            }}
-            className={`absolute top-2 left-2 p-1.5 rounded-full backdrop-blur-md transition z-10 ${isFavorite ? 'bg-red-500 text-white' : 'bg-black/40 text-white/70 hover:text-white'}`}
-          >
-            <Heart size={14} fill={isFavorite ? "currentColor" : "none"} />
-          </button>
-        )}
+        <div className="absolute top-2 left-2 flex flex-col gap-2 z-10">
+          {onToggleFavorite && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(e); }}
+              className={`p-1.5 rounded-full backdrop-blur-md transition ${isFavorite ? 'bg-red-500 text-white' : 'bg-black/40 text-white/70 hover:text-white'}`}
+            >
+              <Heart size={14} fill={isFavorite ? "currentColor" : "none"} />
+            </button>
+          )}
+          {onDownloadClick && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDownloadClick(e); }}
+              className="p-1.5 rounded-full bg-black/40 text-white/70 hover:bg-orange-500 hover:text-white backdrop-blur-md transition"
+              title="下载/外部播放"
+            >
+              <Download size={14} />
+            </button>
+          )}
+        </div>
 
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-0">
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <div className="bg-blue-600 p-3 rounded-full text-white shadow-lg transform scale-75 group-hover:scale-100 transition-transform">
             <Play size={24} fill="currentColor" />
           </div>
         </div>
       </div>
-      <div className="p-3 flex-1 flex flex-col justify-between bg-white dark:bg-gray-800">
+      <div className="p-3 flex-1 flex flex-col justify-between">
         <h3 className="font-bold text-sm line-clamp-1 dark:text-gray-100 text-gray-800">{title}</h3>
         <div className="flex justify-between items-center mt-1">
           <span className="text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">{type}</span>
-          <span className="text-[10px] text-gray-400">资源极速</span>
         </div>
       </div>
     </div>
