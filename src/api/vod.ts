@@ -6,15 +6,35 @@ export const fetchVodList = async (apiUrl: string, page = 1, categoryId?: number
     const params: any = { ac: 'videolist', pg: page };
     if (categoryId) params.t = categoryId;
     if (keyword) params.wd = keyword;
+
     const queryString = new URLSearchParams(params).toString();
     const fullUrl = `${apiUrl}${apiUrl.includes('?') ? '&' : '?'}${queryString}`;
     const response = await axios.get(PROXY_URL, { params: { url: fullUrl } });
     const data = response.data;
+
+    // Some APIs return list, some return data. Handle both.
+    const list = data.list || data.data || [];
+
     return {
-      list: (data.list || []).map((item: any) => ({
-        id: item.vod_id, name: item.vod_name, type: item.type_name, pic: item.vod_pic, lang: item.vod_lang, area: item.vod_area, year: item.vod_year, remarks: item.vod_remarks, actor: item.vod_actor, director: item.vod_director, content: item.vod_content, playUrl: item.vod_play_url,
+      list: list.map((item: any) => ({
+        id: item.vod_id || item.id,
+        name: item.vod_name || item.name,
+        type: item.type_name || item.type,
+        pic: item.vod_pic || item.pic,
+        lang: item.vod_lang || '',
+        area: item.vod_area || '',
+        year: item.vod_year || '',
+        remarks: item.vod_remarks || item.remarks,
+        actor: item.vod_actor || '',
+        director: item.vod_director || '',
+        content: item.vod_content || '',
+        playUrl: item.vod_play_url || item.play_url || '',
       })),
-      total: data.total, page: data.page, pagecount: data.pagecount, limit: data.limit, class: data.class || [],
+      total: data.total || 0,
+      page: data.page || 1,
+      pagecount: data.pagecount || 1,
+      limit: data.limit || 20,
+      class: data.class || [],
     };
   } catch (error) { console.error('Fetch VOD list error:', error); throw error; }
 };

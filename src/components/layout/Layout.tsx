@@ -16,7 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, them
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="flex-1 pb-20 md:pb-0 h-screen overflow-y-auto">
         <header className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white/80 dark:bg-gray-900/80 backdrop-blur sticky top-0 z-40">
-          <h1 className="text-xl font-bold md:hidden">白狐影视</h1>
+          <div className="flex flex-col"><h1 className="text-xl font-bold md:hidden">白狐影视</h1><span className="text-[10px] text-orange-500 md:hidden">若无法播放，请尝试下载/外部播放</span></div>
           <div className="hidden md:block">
             <span className="text-gray-500 dark:text-gray-400">当前频道: </span>
             <span className="font-medium text-blue-500 capitalize">
