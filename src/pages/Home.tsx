@@ -5,8 +5,8 @@ import SearchBar from '../components/video/SearchBar';
 import CategoryFilter from '../components/video/CategoryFilter';
 import DownloadModal from '../components/video/DownloadModal';
 import { fetchVodList, VodInfo } from '../api/vod';
-import { ALL_INITIAL_SOURCES, ADULT_DIRECT_LINKS } from '../constants';
-import { History, Globe, RefreshCw, AlertCircle, ExternalLink, Sparkles, MonitorPlay } from 'lucide-react';
+import { ALL_INITIAL_SOURCES, ADULT_SOURCES } from '../constants';
+import { History, Globe, RefreshCw, AlertCircle, Zap } from 'lucide-react';
 
 const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean; isAdultMode?: boolean }> = ({ forceFavorites, forceSearch, isAdultMode }) => {
   const [videos, setVideos] = useState<VodInfo[]>([]);
@@ -15,7 +15,7 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean; isAdultM
   const [selectedVideo, setSelectedVideo] = useState<VodInfo | null>(null);
   const [downloadVideo, setDownloadVideo] = useState<{name: string, url: string, playlist?: string} | null>(null);
   const [loading, setLoading] = useState(false);
-  const [sources, setSources] = useState<any[]>(ALL_INITIAL_SOURCES);
+  const [sources, setSources] = useState<any[]>(isAdultMode ? ADULT_SOURCES : ALL_INITIAL_SOURCES);
   const [currentSourceIndex, setCurrentSourceIndex] = useState(0);
   const [isGlobalSearch, setIsGlobalSearch] = useState(forceSearch || false);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -24,14 +24,12 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean; isAdultM
   const [viewHistory, setViewHistory] = useState<VodInfo[]>(() => JSON.parse(localStorage.getItem('white_fox_history') || '[]'));
   const [showHistory, setShowHistory] = useState(false);
 
-  const [shuffledLinks, setShuffledLinks] = useState([...ADULT_DIRECT_LINKS]);
-
   useEffect(() => {
     if (!isAdultMode) {
       const saved = localStorage.getItem('white_fox_sources');
       if (saved) setSources(JSON.parse(saved));
     } else {
-      setShuffledLinks([...ADULT_DIRECT_LINKS].sort(() => 0.5 - Math.random()));
+      setSources(ADULT_SOURCES);
     }
   }, [isAdultMode]);
 
@@ -42,7 +40,7 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean; isAdultM
     setSearchKeyword(query);
     try {
       if (query || isGlobalSearch) {
-        const targetSources = sources.slice(0, 15);
+        const targetSources = isGlobalSearch ? sources.slice(0, 15) : [sources[currentSourceIndex]];
         const results = await Promise.allSettled(targetSources.map(s => fetchVodList(s.url, 1, undefined, query)));
         let merged = results.filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled').flatMap(r => r.value.list);
         if (query) {
@@ -50,7 +48,7 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean; isAdultM
            merged.sort((a, b) => (a.name.toLowerCase() === lq ? -1 : (b.name.toLowerCase() === lq ? 1 : 0)));
         }
         setVideos(merged.filter((v, i, a) => v.playUrl && a.findIndex(t => t.name === v.name) === i));
-      } else if (!isAdultMode) {
+      } else {
         const url = sources[currentSourceIndex]?.url;
         if (!url) return;
         const data = await fetchVodList(url, 1, activeCategory || undefined);
@@ -58,9 +56,16 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean; isAdultM
         if (data.class?.length > 0 && categories.length === 0) setCategories(data.class.map((c: any) => ({ id: c.type_id, name: c.type_name })));
       }
     } catch (e) { console.error(e); } finally { setLoading(false); }
-  }, [activeCategory, currentSourceIndex, isGlobalSearch, sources, searchKeyword, categories.length, isAdultMode]);
+  }, [activeCategory, currentSourceIndex, isGlobalSearch, sources, searchKeyword, categories.length]);
 
   useEffect(() => { if (!showHistory && !forceFavorites) loadVideos(); }, [activeCategory, currentSourceIndex, showHistory, isGlobalSearch, forceFavorites, loadVideos]);
+
+  const handleSelectVideo = (video: VodInfo) => {
+    setSelectedVideo(video);
+    const updated = [video, ...viewHistory.filter(v => v.id !== video.id)].slice(0, 50);
+    setViewHistory(updated);
+    localStorage.setItem('white_fox_history', JSON.stringify(updated));
+  };
 
   const currentList = forceFavorites ? favorites : (showHistory ? viewHistory : videos);
 
@@ -80,32 +85,10 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean; isAdultM
               <button onClick={() => { setSearchKeyword(''); loadVideos(''); }} className="p-2.5 rounded-xl bg-white dark:bg-gray-800 text-gray-500 border dark:border-gray-700 hover:text-blue-500 transition-colors"><RefreshCw size={20} /></button>
             </div>
           </div>
+          {searchKeyword && <div className="flex items-center gap-2 text-xs text-orange-500 font-bold"><AlertCircle size={14}/> 正在为您呈现关键词 “{searchKeyword}” 的最优资源</div>}
         </div>
       )}
-
-      {isAdultMode && !showHistory && !searchKeyword && (
-        <div className="mb-8 space-y-8">
-           <div className="bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
-              <div className="relative z-10">
-                <h2 className="text-4xl font-black mb-3 flex items-center gap-4">成人专栏 <Sparkles fill="white" size={32}/></h2>
-                <p className="text-orange-50 font-bold opacity-90 text-lg">精选 20+ 全球主流无码资源，一键极速抵达。</p>
-              </div>
-              <MonitorPlay size={150} className="absolute -right-8 -bottom-8 opacity-10 rotate-12"/>
-           </div>
-           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {shuffledLinks.map(site => (
-                <a key={site.name} href={site.url} target="_blank" rel="noreferrer" className="p-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:border-orange-500 hover:scale-105 transition-all shadow-sm hover:shadow-xl group">
-                  <div className={`w-14 h-14 ${site.type === 'video' ? 'bg-orange-50 dark:bg-orange-900/20' : 'bg-blue-50 dark:bg-blue-900/20'} rounded-2xl flex items-center justify-center transition-colors group-hover:bg-orange-500 group-hover:text-white`}>
-                     <span className={`font-black text-2xl ${site.type === 'video' ? 'text-orange-500' : 'text-blue-500'} group-hover:text-white`}>{site.name.charAt(0)}</span>
-                  </div>
-                  <span className="font-black text-sm group-hover:text-orange-500">{site.name}</span>
-                </a>
-              ))}
-           </div>
-        </div>
-      )}
-
-      {!showHistory && !isGlobalSearch && !forceFavorites && !isAdultMode && (
+      {!showHistory && !isGlobalSearch && !forceFavorites && (
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
             <span className="text-xs font-bold text-gray-400 whitespace-nowrap">路线选择:</span>
@@ -116,23 +99,17 @@ const Home: React.FC<{ forceFavorites?: boolean; forceSearch?: boolean; isAdultM
           <CategoryFilter categories={categories} activeCategory={activeCategory} onSelect={setActiveCategory} />
         </div>
       )}
-
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4"><div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500/20 border-t-blue-500"></div><p className="text-xs text-gray-400 font-black tracking-widest uppercase">Content Discovery</p></div>
+        <div className="flex flex-col items-center justify-center py-24 gap-4"><div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500/20 border-t-blue-500"></div><p className="text-xs text-gray-400 font-black tracking-widest uppercase">Searching</p></div>
       ) : (
-        <div className="w-full">
-           {(!isAdultMode || searchKeyword) && (
-             <VideoList videos={currentList} onSelect={handleSelectVideo} onDownloadSelect={(v) => setDownloadVideo({ name: v.name, url: v.playUrl.split('$')[1] || v.playUrl, playlist: v.playUrl })} favorites={favorites} onToggleFavorite={(e, v) => {
-               e.stopPropagation();
-               const isFav = favorites.some(f => f.id === v.id);
-               const updated = isFav ? favorites.filter(f => f.id !== v.id) : [v, ...favorites];
-               setFavorites(updated);
-               localStorage.setItem('white_fox_favorites', JSON.stringify(updated));
-             }}/>
-           )}
-        </div>
+        <VideoList videos={currentList} onSelect={handleSelectVideo} onDownloadSelect={(v) => setDownloadVideo({ name: v.name, url: v.playUrl.split('$')[1] || v.playUrl, playlist: v.playUrl })} favorites={favorites} onToggleFavorite={(e, v) => {
+          e.stopPropagation();
+          const isFav = favorites.some(f => f.id === v.id);
+          const updated = isFav ? favorites.filter(f => f.id !== v.id) : [v, ...favorites];
+          setFavorites(updated);
+          localStorage.setItem('white_fox_favorites', JSON.stringify(updated));
+        }}/>
       )}
-
       {selectedVideo && (
         <Player url={selectedVideo.playUrl.split('$')[1] || selectedVideo.playUrl} title={selectedVideo.name} playlist={selectedVideo.playUrl} onBack={() => setSelectedVideo(null)} onOpenDownload={(curUrl) => setDownloadVideo({ name: selectedVideo.name, url: curUrl, playlist: selectedVideo.playUrl })} />
       )}
