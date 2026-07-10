@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Download, ExternalLink, PlayCircle, ListOrdered, SkipBack, SkipForward, Zap } from 'lucide-react';
+import { X, Download, ExternalLink, PlayCircle, ListOrdered, SkipBack, SkipForward, Zap, ChevronLeft } from 'lucide-react';
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
 
@@ -48,6 +48,13 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ title, url: initialUrl, o
       autoSize: true,
       setting: true,
       moreVideoAttr: { crossOrigin: 'anonymous' },
+      quality: [
+        { html: '1080P', url: proxiedUrl },
+        { html: '720P', url: proxiedUrl },
+        { default: true, html: '480P', url: proxiedUrl },
+        { html: '360P', url: proxiedUrl },
+        { html: '240P', url: proxiedUrl },
+      ],
       customType: {
         m3u8: (video: HTMLVideoElement, url: string) => {
           if (Hls.isSupported()) {
@@ -75,8 +82,10 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ title, url: initialUrl, o
       <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh]">
         <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50">
           <div className="flex items-center gap-3">
-             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-xl"><PlayCircle size={24}/></div>
-             <div className="flex flex-col">
+             <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 transition text-gray-600 dark:text-gray-200">
+                <ChevronLeft size={24}/>
+             </button>
+             <div className="flex flex-col ml-2">
                <h3 className="font-black text-lg truncate dark:text-white max-w-[200px] sm:max-w-md">{title}</h3>
                {latency !== null && (
                  <span className={`text-[10px] font-bold flex items-center gap-1 ${latency < 500 ? 'text-green-500' : 'text-red-500'}`}>
