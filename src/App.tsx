@@ -36,18 +36,21 @@ const App: React.FC = () => {
   if (!isAuthenticated) return <Login onLogin={handleLogin} />;
 
   return (
-    <Layout
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      theme={theme}
-      toggleTheme={toggleTheme}
-      onLogout={handleLogout}
-    >
-      {activeTab === 'home' && <Home />}
-      {activeTab === 'favorites' && <Home forceFavorites={true} />}
-      {activeTab === 'settings' && <Settings />}
-      {activeTab === 'search' && <Home forceSearch={true} />}
-    </Layout>
+    <div className={theme}>
+      <Layout
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onLogout={handleLogout}
+      >
+        {activeTab === 'home' && <Home />}
+        {activeTab === 'adult' && <Home isAdultMode={true} />}
+        {activeTab === 'favorites' && <Home forceFavorites={true} />}
+        {activeTab === 'settings' && <Settings />}
+        {activeTab === 'search' && <Home forceSearch={true} />}
+      </Layout>
+    </div>
   );
 };
 

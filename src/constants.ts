@@ -2,7 +2,7 @@ export const DEFAULT_SOURCES = [
   { name: '快车资源', url: 'https://www.kczyapi.com/api.php/provide/vod/at/json' },
   { name: '卧龙资源', url: 'https://collect.wolongzyw.com/api.php/provide/vod/at/json' },
   { name: '量子资源', url: 'https://lziapi.com/api.php/provide/vod/at/json' },
-  { name: '非凡资源', url: 'https://cj.ffzyapi.com/api.php/provide/vod/at/json' },
+  { name: '非凡资源', url: 'http://cj.ffzyapi.com/api.php/provide/vod/at/json' },
   { name: '红牛资源', url: 'https://www.hongniuzy2.com/api.php/provide/vod/at/json' },
   { name: '百度资源', url: 'https://api.apibdzy.com/api.php/provide/vod/at/json' },
   { name: '虎牙资源', url: 'https://www.huayazy.com/api.php/provide/vod/at/json' },
@@ -20,4 +20,16 @@ export const DEFAULT_SOURCES = [
   { name: '考拉资源', url: 'https://kaolaapi.com/api.php/provide/vod/at/json' },
   { name: '飞速资源', url: 'https://feisuapi.com/api.php/provide/vod/at/json' }
 ];
+
+export const ADULT_SOURCES = [
+  { name: '成人专线1', url: 'https://api.clzyapi.com/api.php/provide/vod/at/json' },
+  { name: '成人专线2', url: 'https://api.hhm3u8.com/api.php/provide/vod/at/json' },
+  { name: '成人专线3', url: 'https://api.p7m3u8.com/api.php/provide/vod/at/json' },
+  { name: '成人专线4', url: 'https://api.kkm3u8.com/api.php/provide/vod/at/json' },
+  { name: '成人专线5', url: 'https://api.xzm3u8.com/api.php/provide/vod/at/json' },
+  { name: '成人专线6', url: 'https://api.rrm3u8.com/api.php/provide/vod/at/json' },
+  { name: '成人专线7', url: 'https://api.llm3u8.com/api.php/provide/vod/at/json' },
+  { name: '成人专线8', url: 'https://api.ssm3u8.com/api.php/provide/vod/at/json' }
+];
+
 export const ALL_INITIAL_SOURCES = [...DEFAULT_SOURCES];
