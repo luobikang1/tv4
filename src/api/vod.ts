@@ -13,11 +13,12 @@ export interface VodInfo {
   director: string;
   content: string;
   playUrl: string;
+  sourceName?: string;
 }
 
 const PROXY_URL = '/api/proxy';
 
-export const fetchVodList = async (apiUrl: string, page = 1, categoryId?: number, keyword?: string) => {
+export const fetchVodList = async (apiUrl: string, page = 1, categoryId?: number, keyword?: string, sourceName?: string) => {
   try {
     const params: any = { ac: 'videolist', pg: page };
     if (categoryId) params.t = categoryId;
@@ -30,12 +31,10 @@ export const fetchVodList = async (apiUrl: string, page = 1, categoryId?: number
     let data = response.data;
     let list = data.list || data.data || data.vods || [];
 
-    // Fallback for search
     if (keyword && list.length === 0) {
       const listUrl = `${apiUrl}${apiUrl.includes('?') ? '&' : '?'}${new URLSearchParams({ ac: 'list', pg: String(page), wd: keyword }).toString()}`;
       const listResponse = await axios.get(PROXY_URL, { params: { url: listUrl }, timeout: 8000 });
       const briefList = listResponse.data.list || listResponse.data.data || [];
-
       if (briefList.length > 0) {
         const ids = briefList.slice(0, 10).map((item: any) => item.vod_id || item.id).join(',');
         const detailUrl = `${apiUrl}${apiUrl.includes('?') ? '&' : '?'}${new URLSearchParams({ ac: 'videolist', ids }).toString()}`;
@@ -54,7 +53,7 @@ export const fetchVodList = async (apiUrl: string, page = 1, categoryId?: number
         pic: item.vod_pic || item.pic || '',
         remarks: item.vod_remarks || item.remarks || '',
         playUrl: item.vod_play_url || item.play_url || '',
-        // Include raw item for debug or deeper parsing if needed
+        sourceName: sourceName
       })).filter((v: any) => v.name),
       total: data.total || 0,
       page: data.page || 1,

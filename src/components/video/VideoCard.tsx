@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { Heart, Play, Download } from 'lucide-react';
+import { Heart, Play, Download, Zap } from 'lucide-react';
 
 interface VideoCardProps {
   title: string;
   poster: string;
   type: string;
   remark: string;
+  sourceName?: string;
+  latency?: number;
   onClick: () => void;
   onDownloadClick?: (e: React.MouseEvent) => void;
   isFavorite?: boolean;
   onToggleFavorite?: (e: React.MouseEvent) => void;
 }
 
-const VideoCard: React.FC<VideoCardProps> = ({ title, poster, type, remark, onClick, onDownloadClick, isFavorite, onToggleFavorite }) => {
+const VideoCard: React.FC<VideoCardProps> = ({ title, poster, type, remark, sourceName, latency, onClick, onDownloadClick, isFavorite, onToggleFavorite }) => {
   const [imgSrc, setImgSrc] = useState(poster);
   const proxyUrl = '/api/proxy?url=' + encodeURIComponent(poster);
 
@@ -63,10 +65,23 @@ const VideoCard: React.FC<VideoCardProps> = ({ title, poster, type, remark, onCl
         </div>
       </div>
       <div className="p-3 flex-1 flex flex-col justify-between">
-        <h3 className="font-bold text-sm line-clamp-1 dark:text-gray-100 text-gray-800">{title}</h3>
-        <div className="flex justify-between items-center mt-1">
-          <span className="text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">{type}</span>
+        <div>
+          <h3 className="font-bold text-sm line-clamp-1 dark:text-gray-100 text-gray-800">{title}</h3>
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">{type}</span>
+          </div>
         </div>
+
+        {(sourceName || latency !== undefined) && (
+          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-[9px] font-bold">
+            <span className="text-gray-400 truncate max-w-[60%]">{sourceName || '未知源'}</span>
+            {latency !== undefined && (
+              <span className={`flex items-center gap-0.5 ${latency < 500 ? 'text-green-500' : 'text-orange-500'}`}>
+                <Zap size={8} /> {latency}ms
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

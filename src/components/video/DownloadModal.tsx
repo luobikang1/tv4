@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Download, ExternalLink, PlayCircle, ListOrdered, Zap } from 'lucide-react';
+import { X, Download, ExternalLink, PlayCircle, ListOrdered, SkipBack, SkipForward, Zap } from 'lucide-react';
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
 
@@ -66,6 +66,10 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ title, url: initialUrl, o
     return () => { if (art && art.destroy) art.destroy(); };
   }, [currentUrl]);
 
+  const currentIndex = episodes.findIndex(e => e.url === currentUrl);
+  const goNext = () => currentIndex < episodes.length - 1 && setCurrentUrl(episodes[currentIndex + 1].url);
+  const goPrev = () => currentIndex > 0 && setCurrentUrl(episodes[currentIndex - 1].url);
+
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[210] flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh]">
@@ -81,7 +85,11 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ title, url: initialUrl, o
                )}
              </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition text-gray-500"><X size={24} /></button>
+          <div className="flex items-center gap-2">
+            <button onClick={goPrev} disabled={currentIndex <= 0} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full disabled:opacity-30 hover:bg-gray-200 transition"><SkipBack size={18}/></button>
+            <button onClick={goNext} disabled={currentIndex === -1 || currentIndex >= episodes.length - 1} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full disabled:opacity-30 hover:bg-gray-200 transition"><SkipForward size={18}/></button>
+            <button onClick={onClose} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition text-gray-500 ml-4"><X size={24} /></button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 no-scrollbar">
@@ -91,7 +99,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ title, url: initialUrl, o
                 <div ref={artRef} className="w-full h-full"></div>
               </div>
               <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 space-y-4">
-                <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">下载地址 (自动代理已开启)</h4>
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">下载地址</h4>
                 <div className="relative group">
                   <input readOnly value={currentUrl} className="w-full text-[10px] p-4 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl outline-none font-mono pr-20" />
                   <button onClick={() => { navigator.clipboard.writeText(currentUrl); alert('复制成功'); }} className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-xl text-[10px] font-black shadow-sm active:scale-95 transition">复制</button>
@@ -105,7 +113,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ title, url: initialUrl, o
             <div className="lg:col-span-2 space-y-4">
                {episodes.length > 1 ? (
                  <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 h-full flex flex-col">
-                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><ListOrdered size={16}/> 选集列表</h4>
+                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><ListOrdered size={16}/> 选集列表 ({episodes.length})</h4>
                     <div className="grid grid-cols-2 gap-2 overflow-y-auto max-h-[500px] no-scrollbar pr-1 flex-1">
                       {episodes.map((ep, i) => (
                         <button key={i} onClick={() => setCurrentUrl(ep.url)} className={`px-3 py-3 rounded-xl text-xs font-bold transition-all truncate ${currentUrl === ep.url ? 'bg-blue-600 text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-500 border border-gray-100 dark:border-gray-700'}`}>{ep.name}</button>
