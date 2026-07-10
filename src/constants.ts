@@ -8,20 +8,22 @@ export const DEFAULT_SOURCES = [
   { name: '虎牙资源', url: 'https://www.huayazy.com/api.php/provide/vod/at/json' },
   { name: '樱花资源', url: 'https://m3u8.apiyhzy.com/api.php/provide/vod/at/json' },
   { name: '极速资源', url: 'https://jsapi.com/api.php/provide/vod/at/json' },
-  { name: '索尼资源', url: 'https://suoniapi.com/api.php/provide/vod/at/json' }
+  { name: '索尼资源', url: 'https://suoniapi.com/api.php/provide/vod/at/json' },
+  { name: '天空资源', url: 'https://api.tiankongapi.com/api.php/provide/vod/at/json' },
+  { name: '快云资源', url: 'https://www.kuaicloud.com/api.php/provide/vod/at/json' },
+  { name: '森林资源', url: 'https://slapi.com/api.php/provide/vod/at/json' },
+  { name: '木耳资源', url: 'https://muerapi.com/api.php/provide/vod/at/json' },
+  { name: '酷点资源', url: 'https://kudiapi.com/api.php/provide/vod/at/json' },
+  { name: '八戒资源', url: 'https://bajieapi.com/api.php/provide/vod/at/json' },
+  { name: '小小资源', url: 'https://xxapi.com/api.php/provide/vod/at/json' },
+  { name: '大米资源', url: 'https://damiapi.com/api.php/provide/vod/at/json' },
+  { name: '考拉资源', url: 'https://kaolaapi.com/api.php/provide/vod/at/json' },
+  { name: '飞速资源', url: 'https://feisuapi.com/api.php/provide/vod/at/json' }
 ];
 
-export const ADULT_INITIAL_SOURCES = [
-  { name: '成人源-1', url: 'https://api.clzyapi.com/api.php/provide/vod/at/json' },
-  { name: '成人源-2', url: 'https://api.hhm3u8.com/api.php/provide/vod/at/json' },
-  { name: '成人源-3', url: 'https://api.p7m3u8.com/api.php/provide/vod/at/json' },
-  { name: '成人源-4', url: 'https://api.kkm3u8.com/api.php/provide/vod/at/json' },
-  { name: '成人源-5', url: 'https://api.xzm3u8.com/api.php/provide/vod/at/json' },
-  { name: '成人源-6', url: 'https://api.rrm3u8.com/api.php/provide/vod/at/json' },
-  { name: '成人源-7', url: 'https://api.llm3u8.com/api.php/provide/vod/at/json' },
-  { name: '成人源-8', url: 'https://api.ssm3u8.com/api.php/provide/vod/at/json' },
-  { name: '成人源-9', url: 'https://api.hhzyapi.com/api.php/provide/vod/at/json' },
-  { name: '成人源-10', url: 'https://api.clm3u8.com/api.php/provide/vod/at/json' }
+export const ADULT_SOURCES = [
+  { name: '综合线路', url: 'https://api.clzyapi.com/api.php/provide/vod/at/json' },
+  { name: '备用线路', url: 'https://api.hhm3u8.com/api.php/provide/vod/at/json' }
 ];
 
 export const ADULT_DIRECT_LINKS = [
@@ -43,12 +45,18 @@ export const ADULT_DIRECT_LINKS = [
   { name: 'XVideos', url: 'https://xvideos.com', type: 'video' },
   { name: 'XHamster', url: 'https://xhamster.com', type: 'video' },
   { name: 'SpankBang', url: 'https://spankbang.com', type: 'video' },
+  { name: 'YouPorn', url: 'https://youporn.com', type: 'video' },
+  { name: 'RedTube', url: 'https://redtube.com', type: 'video' },
   { name: 'Teon', url: 'https://teon.co', type: 'image' },
+  { name: 'B-D-G', url: 'https://b-d-g.net', type: 'image' },
+  { name: 'E-Hentai', url: 'https://e-hentai.org', type: 'image' },
   { name: 'NHentai', url: 'https://nhentai.net', type: 'image' },
   { name: 'Pixiv', url: 'https://www.pixiv.net', type: 'image' },
   { name: 'Rule34', url: 'https://rule34.xxx', type: 'image' },
   { name: 'Gelbooru', url: 'https://gelbooru.com', type: 'image' },
-  { name: 'Yande.re', url: 'https://yande.re', type: 'image' }
+  { name: 'Konachan', url: 'https://konachan.com', type: 'image' },
+  { name: 'Yande.re', url: 'https://yande.re', type: 'image' },
+  { name: 'Sankaku', url: 'https://sankakucomplex.com', type: 'image' }
 ];
 
 export const ALL_INITIAL_SOURCES = [...DEFAULT_SOURCES];
